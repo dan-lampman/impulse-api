@@ -61,7 +61,7 @@ exports.getDocument = {
 };
 ```
 ### Route Auth
-Impulse-Api comes with JWT token auth built in. As long as `secretKey` is provided to the server configuration on initialization, routes can use an optional `tokenAuth:true` in order to enable basic JWT authentication.
+Impulse-Api comes with [JSON web token](https://www.npmjs.com/package/jsonwebtoken) auth built in. As long as `secretKey` is provided to the server configuration on initialization, routes can use an optional `tokenAuth:true` in order to enable basic JWT authentication.
 
 Token generation should be handled outside the scope of this package but may eventually be added at a later time.
 
