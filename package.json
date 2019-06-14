@@ -1,6 +1,6 @@
 {
   "author:": "Dan L <dan.lampman@gmail.com>",
-  "main": "./src/api.js",
+  "main": "./lib/api.js",
   "name": "impulse-api",
   "description": "A quick and efficient Api with Express under the hood.",
   "license": "MIT",

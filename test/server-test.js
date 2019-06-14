@@ -12,7 +12,7 @@ describe('server-test', () => {
             try {
                 new Server();
             } catch (e) {
-                assert.contains(e.message, 'valid configuration');
+                assert.contains(e.message, 'valid config');
             }
         });
         it('should throw an error if service name is missing', () => {
@@ -33,7 +33,7 @@ describe('server-test', () => {
                 assert.contains(e.message, 'route');
             }
         });
-        it('333 should property set the port', () => {
+        it('should property set the port', () => {
             const Api = new Server({
                 name: 'test-server',
                 routeDir: './test-routes',
