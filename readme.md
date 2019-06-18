@@ -48,7 +48,7 @@ exports.getDocument = {
     inputs: {
         id: {
             required: true,
-            validate: val => return parseInt(val, 10)
+            validate: val => parseInt(val, 10)
         },
     },
     run: (services, inputs, next) => {
