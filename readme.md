@@ -14,13 +14,13 @@ A at least one .js file must exist at `{project-root}/routes` in order to initia
 const Impulse = require('impulse-api');
 
 const config = {
-    env: 'DEV'
+    env: 'DEV',
     port: 3000,
-    secretKey: 'topSecret!'
-    version: 1.0.0,
+    secretKey: 'topSecret!',
+    version: '1.0.0',
     name: 'Hello-World-Api',
     routeDir: __dirname.concat('/routes')
-};
+}
 
 const api = new Impulse(config);
 await api.init();
