@@ -196,6 +196,7 @@ class Server {
         }
 
         let username = null;
+        let decoded = null;
 
         if (route.tokenAuth) {
             const token = (req.params && req.params.token) ||
@@ -212,7 +213,7 @@ class Server {
             }
 
             try {
-                const decoded = await Auth.verifyToken(token, self.secretKey);
+                decoded = await Auth.verifyToken(token, self.secretKey);
                 if (decoded.username) {
                     username = decoded.username;
                 }
@@ -262,6 +263,8 @@ class Server {
         if (username !== null) {
             data.username = username;
         }
+
+        data.decoded = decoded;
 
         route.run.bind(routeContext)(self.container, data, ((responseError, response) => {
             sendResponse(responseError, response);
