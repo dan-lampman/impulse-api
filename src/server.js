@@ -200,7 +200,8 @@ class Server {
         if (route.tokenAuth) {
             const token = (req.params && req.params.token) ||
                 (req.query && req.query.token) ||
-                (req.body && req.body.token);
+                (req.body && req.body.token) ||
+                (req.headers['x-access-token'])
 
             if (!token) {
                 res.status(403).send({
