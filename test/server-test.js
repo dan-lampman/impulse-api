@@ -2,13 +2,21 @@ const Server = require('../src/server');
 const assert = require('assert');
 const sinon = require('sinon');
 
+const testApi = new Server({
+    name: 'test-server',
+    routeDir: './test-routes',
+    port: 4000,
+    env: 'test',
+    services: {}
+});
+
 assert.contains = (orig, key, message) => {
     assert.equal(orig.indexOf(key) >= 0, true, message);
 };
 
 describe('server-test', () => {
     describe('instantiation', () => {
-        it('should throw an error if configuration object is missing', () => {
+        it('should throw an error if a configuration object is missing', () => {
             try {
                 new Server();
             } catch (e) {
@@ -338,42 +346,41 @@ describe('server-test', () => {
 
     describe('#checkConflictingRoutes', () => {
         it('should not call callback if routes array is empty', () => {
-            const cb = sinon.spy();
-            Server.prototype.checkConflictingRoutes([], cb);
-            sinon.assert.notCalled(cb);
+            const spy = sinon.spy();
+            testApi.checkConflictingRoutes([], spy);
+            sinon.assert.notCalled(spy);
         });
 
         it('should find conflicting endpoints', () => {
-            const cb = sinon.spy();
+            const spy = sinon.spy();
             const routes = [
                 { method: 'get', endpoint: '/api/user/info' },
                 { method: 'get', endpoint: '/api/user/:id' }
             ];
-            Server.prototype.checkConflictingRoutes(routes, cb);
-            sinon.assert.calledOnce(cb);
-            sinon.assert.calledWith(cb, routes[1], routes[0]);
+            testApi.checkConflictingRoutes(routes, spy);
+            sinon.assert.calledOnce(spy);
+            sinon.assert.calledWith(spy, routes[1], routes[0]);
         });
 
         it('should find conflicting endpoints with multiple dynamic parameters', () => {
-            const cb = sinon.spy();
+            const spy = sinon.spy();
             const routes = [
                 { method: 'get', endpoint: '/api/user/info/:test' },
                 { method: 'get', endpoint: '/api/user/:id/:test' }
             ];
-            Server.prototype.checkConflictingRoutes(routes, cb);
-            sinon.assert.calledOnce(cb);
-            sinon.assert.calledWith(cb, routes[1], routes[0]);
-
+            testApi.checkConflictingRoutes(routes, spy);
+            sinon.assert.calledOnce(spy);
+            sinon.assert.calledWith(spy, routes[1], routes[0]);
         });
 
         it('should not find conflicting endpoints when HTTP verbs are different', () => {
-            const cb = sinon.spy();
+            const spy = sinon.spy();
             const routes = [
                 { method: 'post', endpoint: '/api/user/info' },
                 { method: 'get', endpoint: '/api/user/:id' }
             ];
-            Server.prototype.checkConflictingRoutes(routes, cb);
-            sinon.assert.notCalled(cb);
+            testApi.checkConflictingRoutes(routes, spy);
+            sinon.assert.notCalled(spy);
         });
     });
 });

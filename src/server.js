@@ -62,7 +62,6 @@ class Server {
     }
 
     start() {
-        const self = this;
         let server;
 
         return new Promise((resolve) => {
@@ -75,10 +74,10 @@ class Server {
             // Start the HTTP server
             server = this.http.listen(this.port, () => {
                 console.log('Server initialized:');
-                console.log(`-- name: ${self.name}`);
-                console.log(`-- version: ${self.version}`);
-                console.log(`-- environment: ${self.env}`);
-                console.log(`-- port: ${self.port}`);
+                console.log(`-- name: ${this.name}`);
+                console.log(`-- version: ${this.version}`);
+                console.log(`-- environment: ${this.env}`);
+                console.log(`-- port: ${this.port}`);
                 resolve(server);
                 return;
             });
@@ -213,7 +212,7 @@ class Server {
             }
 
             try {
-                decoded = await Auth.verifyToken(token, self.secretKey);
+                decoded = await Auth.verifyToken(token, this.secretKey);
                 if (decoded.username) {
                     username = decoded.username;
                 }
@@ -231,7 +230,7 @@ class Server {
             (req.query && req.query.key) || (req.body && req.body.key);
 
         if (route.applicationAuth) {
-            if (!key || key !== self.appKey) {
+            if (!key || key !== this.appKey) {
                 sendResponse(Errors.UnauthorizedUser());
                 return;
             }
@@ -241,7 +240,7 @@ class Server {
             data = req.body;
         } else if (route.inputs) {
             try {
-                data = self.buildParameters(
+                data = this.buildParameters(
                     Object.assign(req.query || {}, req.body || {}, req.params || {}, req.files || {}),
                     route.inputs
                 );
@@ -253,7 +252,7 @@ class Server {
 
         if (route.headers) {
             try {
-                data.headers = self.buildParameters(req.headers, route.headers);
+                data.headers = this.buildParameters(req.headers, route.headers);
             } catch (error) {
                 sendResponse(error);
                 return;
@@ -267,10 +266,10 @@ class Server {
         data.decoded = decoded;
         data._host = req.get('origin') || req.get('host')
 
-        route.run.bind(routeContext)(self.container, data, ((responseError, response) => {
+        route.run.bind(routeContext)(this.container, data, ((responseError, response) => {
             sendResponse(responseError, response);
             return;
-        }).bind(self));
+        }).bind(this));
     }
 
     buildParameters(params, inputs) {
@@ -287,7 +286,7 @@ class Server {
             return true;
         }
 
-        Object.keys(inputs).forEach(function inputCheck(name) {
+        Object.keys(inputs).forEach((name) => {
             const formatter = inputs[name].formatter || proxyFormatter;
             const validator = inputs[name].validate || proxyValidator;
 
@@ -354,12 +353,11 @@ class Server {
     }
 
     checkRoutes(files) {
-        const self = this;
         const routes = [];
 
         return new Promise((resolve, reject) => {
             files.forEach((file) => {
-                const filepath = `${self.routeDir}/${file}`;
+                const filepath = `${this.routeDir}/${file}`;
                 const routeFile = require(filepath);
 
                 Object.keys(routeFile).forEach((routeKey) => {
@@ -367,8 +365,8 @@ class Server {
                 });
             });
 
-            self.checkConflictingRoutes(routes, (route1, route2) => {
-                if (self.env !== 'test') {
+            this.checkConflictingRoutes(routes, (route1, route2) => {
+                if (this.env !== 'test') {
                     reject(new Error(`Conflicting endpoints found:
                     ${route1.method.toUpperCase()} ${route1.endpoint}
                     ${route2.method.toUpperCase()} ${route2.endpoint}`));
@@ -394,7 +392,6 @@ class Server {
     }
 
     loadRoutes(files) {
-        const self = this;
         const verbMap = {
             del: 'delete'
         };
@@ -405,7 +402,7 @@ class Server {
             }
 
             files.forEach((file) => {
-                const filepath = `${self.routeDir}/${file}`;
+                const filepath = `${this.routeDir}/${file}`;
                 const routeFile = require(filepath);
 
                 Object.keys(routeFile).forEach((routeKey) => {
@@ -461,9 +458,9 @@ class Server {
                     verb = (verbMap[method]) ? verbMap[method] : method;
 
                     if (verb === 'post' || verb === 'patch' || verb === 'put') {
-                        self.http[verb](route.endpoint, multer().none(), self.preprocessor.bind(self, route));
+                        this.http[verb](route.endpoint, multer().none(), this.preprocessor.bind(this, route));
                     } else {
-                        self.http[verb](route.endpoint, self.preprocessor.bind(self, route));
+                        this.http[verb](route.endpoint, this.preprocessor.bind(this, route));
                     }
 
                     resolve(true);
@@ -473,7 +470,6 @@ class Server {
     }
 
     loadHeartbeatRoute() {
-        const self = this;
         const route = {
             name: 'heartbeat',
             method: 'get',
@@ -483,8 +479,8 @@ class Server {
                     status: 'alive',
                 };
 
-                if (self.heartbeat) {
-                    self.heartbeat(conn, params, (err, data) => {
+                if (this.heartbeat) {
+                    this.heartbeat(conn, params, (err, data) => {
                         response.data = err || data;
                         next(null, response);
                         return;
