@@ -265,6 +265,7 @@ class Server {
         }
 
         data.decoded = decoded;
+        data._host = req.get('origin') || req.get('host')
 
         route.run.bind(routeContext)(self.container, data, ((responseError, response) => {
             sendResponse(responseError, response);
