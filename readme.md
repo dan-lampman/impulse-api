@@ -1,5 +1,5 @@
 # impulse-api
-This module provides a quick and easy way to create new http servers.
+This module provides a quick and easy way to create powerful http servers.
 
 ## Installation
 ```npm install impulse-api```
@@ -17,27 +17,52 @@ const config = {
     env: 'DEV',
     port: 3000,
     secretKey: 'topSecret!',
+    appKey:  '@adminSecretKey',
     version: '1.0.0',
     name: 'Hello-World-Api',
-    routeDir: __dirname.concat('/routes')
+    routeDir: __dirname.concat('/routes'),
+    services: {}
 }
 
 const api = new Impulse(config);
 await api.init();
 ```
-#### Heartbeat endpoint
-By default, all APIs have a `/heartbeat` endpoint that returns 200 along with the following standard output:
-```js
-{
-	status: 'alive'
-}
+#### Server Parameters
+-__env__ (required)
+The Environment the server should be running in. Typically this can be parsed from `.env` or hoisted from `process.ENV`.
 
+-__port__  (required)
+The port on which the server should be running.
+
+-__secretKey__
+The key used for all JSON web token encoding and decoding.
+
+-__applicationKey__
+The key used for all basic application authentication.
+
+-__name__
+The name of the server.
+
+-__version__
+The version of the server.
+
+-__routeDir__ (required)
+The location of the root route directory.
+
+-__services__
+Optional object that is available on every route. Services is ideal for storing connection information to databases or any other auxiliary functionality.
+
+#### Heartbeat endpoint
+By default, all Impulse-APIs have a `/heartbeat` endpoint that returns 200 along with the following standard output:
+```js
+{ status: 'alive' }
 ```
 ## Routes
-Routes are files that provide HTTP functionality.
+Routes are functions that expose HTTP path functionality.
 
+Route files must exist in any number of folders or subfolders at `{project-root}/routes`
 ```js
-// routes/document-routes.js
+// routes/documents.js
 exports.getDocument = {
     name: 'getDocument',
     description: 'get a document by id',
@@ -53,7 +78,6 @@ exports.getDocument = {
     },
     run: (services, inputs, next) => {
         const id = inputs.id;
-
         next(200, {
             id
         });
@@ -61,7 +85,77 @@ exports.getDocument = {
 };
 ```
 ### Route Auth
+
+#### Token Auth
 Impulse-Api comes with [JSON web token](https://www.npmjs.com/package/jsonwebtoken) auth built in. As long as `secretKey` is provided to the server configuration on initialization, routes can use an optional `tokenAuth:true` in order to enable basic JWT authentication.
 
-Token generation should be handled outside the scope of this package but may eventually be added at a later time.
+Additionally, any variables that are encoded in the token are accessible once the token has been decoded via `inputs.decoded`.
 
+Token generation is handled via `Impulse.Auth` which again utilizes the [JSON web token](https://www.npmjs.com/package/jsonwebtoken) package.
+
+```js
+const { Auth } = require('impulse-api');
+{ decode: [Function],
+  verify: [Function],
+  sign: [Function],
+  JsonWebTokenError: [Function: JsonWebTokenError],
+  NotBeforeError: [Function: NotBeforeError],
+  TokenExpiredError: [Function: TokenExpiredError] }
+```
+
+#### Application Auth
+For `admin` type routes, Impulse-Api also provides `applicationAuth` which secures any routes behind basic key authorization provided by `appKey` in the server configuration.
+
+```js
+// routes/users.js
+exports.createUser = {
+    name: 'createUser',
+    description: 'create a new user',
+    method: 'post',
+    endpoint: '/api/user/',
+    version: 'v1',
+    applicationAuth: true,
+    inputs: {
+        username: {
+            required: true,
+        },
+        password: {
+            required: true,
+        }
+    },
+    run: (services, inputs, next) => {
+        const id = inputs.id;
+        next(200, {
+            id
+        });
+    },
+};
+```
+If a route specifies both Application and Token auth, Application auth will take precedence.
+
+Be aware: Application auth routes should not be called from any public client since this will expose the `appKey`.
+
+
+### Inputs
+
+Impulse-Api automatically parses all request query, body, params, and files variables with the following priority: query, body, params, files. Header fields are always parsed.
+
+This allows for very dynamic routes. The following routes will all parse `newEmailAddress`.
+
+```js
+PUT /user/:id/&newEmailAddress=hello@world.com
+
+PUT /user/:id/
+body: {
+	newEmailAddress: 'hello@world.com'
+}
+
+PUT /user/:id/
+json: {
+	"newEmailAddress": "hello@world.com"
+}
+
+PUT /user/:id/
+params: newEmailAddress="hello@world.com"
+
+```
