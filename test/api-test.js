@@ -3,7 +3,7 @@ const assert = require('assert');
 
 describe('server-test', () => {
     describe('instantiation', () => {
-        it('should expose the Errors functions', () => {
+        it('should expoes the Errors functions', () => {
             assert(Api.Errors !== undefined);
         });
     });
