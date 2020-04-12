@@ -25,7 +25,11 @@ const config = {
 }
 
 const api = new Impulse(config);
-await api.init();
+api.init().then((response) => {
+    console.log(response)
+}).catch((error) => {
+    console.log(error)
+})
 ```
 #### Server Parameters
 -__env__ (required)
@@ -104,7 +108,7 @@ const { Auth } = require('impulse-api');
 ```
 
 #### Application Auth
-For `admin` type routes, Impulse-Api also provides `applicationAuth` which secures any routes behind basic key authorization provided by `appKey` in the server configuration.
+For `admin` type routes, Impulse-Api also provides `applicationAuth` which secures any routes behind basic key authorization provided by `appKey` in the server configuration. The `applicationAuth` can be verified and passed in the header, parameters, query, or body as `key`.
 
 ```js
 // routes/users.js

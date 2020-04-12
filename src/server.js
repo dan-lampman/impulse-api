@@ -55,7 +55,7 @@ class Server {
                 return this.postMiddleware();
             }).then(()=> {
                 return this.start();
-            }).then(() => {
+            }).then((serverResponse) => {
                 return resolve(true);
             }).catch(error => reject(error));
         })
@@ -78,7 +78,7 @@ class Server {
                 console.log(`-- version: ${this.version}`);
                 console.log(`-- environment: ${this.env}`);
                 console.log(`-- port: ${this.port}`);
-                resolve(server);
+                resolve(true);
                 return;
             });
         });
@@ -325,33 +325,6 @@ class Server {
         })
     }
 
-    testRoute(route) {
-        let pieces = [];
-        if (!route.run) {
-            throw new Error(`Route [${route.name}] is missing a "run" property`);
-        }
-        if (!route.endpoint) {
-            throw new Error(`Route [${route.name}] is missing an endpoint declaration`);
-        }
-        if (!route.method) {
-            throw new Error(`Route [${route.name}] is missing http method declaration`);
-        }
-
-        if (route.endpoint.indexOf('/:') >= 0) {
-            pieces = route.endpoint.split('/');
-            pieces.forEach((piece) => {
-                if (piece.indexOf(':') === 0) {
-                    if (!route.inputs) {
-                        throw new Error(`Missing required inputs for [${route.name}]`);
-                    }
-                    if (!route.inputs[piece.split(':')[1]]) {
-                        throw new Error(`Missing required input [${piece}] in route [${route.name}]`);
-                    }
-                }
-            });
-        }
-    }
-
     checkRoutes(files) {
         const routes = [];
 
@@ -416,6 +389,10 @@ class Server {
 
                     let pieces = [];
                     let error = null;
+                    if (!route.name) {
+                        reject(new Error(`Route [null] is missing a "name" property`));
+                        return;
+                    }
                     if (!route.run) {
                         reject(new Error(`Route [${route.name}] is missing a "run" property`));
                         return;
