@@ -137,7 +137,7 @@ exports.createUser = {
 ```
 If a route specifies both Application and Token auth, Application auth will take precedence.
 
-Be aware: Application auth routes should not be called from any public client since this will expose the `appKey`.
+-- Application auth routes should not be called from any public client since this will expose `appKey`.
 
 
 ### Inputs
