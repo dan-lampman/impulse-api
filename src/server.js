@@ -412,11 +412,11 @@ class Server {
                             if (piece.indexOf(':') === 0) {
                                 if (!route.inputs) {
                                     error = new Error(`Missing required inputs for [${route.name}]`);
-                                    return;
+                                    break;
                                 }
                                 if (!route.inputs[piece.split(':')[1]]) {
                                     error = new Error(`Missing required input [${piece}] in route [${route.name}]`)
-                                    return;
+                                    break;
                                 }
                             }
                         }
