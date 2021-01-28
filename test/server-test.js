@@ -313,6 +313,36 @@ describe('server-test', () => {
                 assert.contains(error.message, 'missing an endpoint');
             });
         });
+
+        it('should return an error if the input is missing', () => {
+            const Api = new Server({
+                name: 'test-Server',
+                routeDir: __dirname.concat('/routes'),
+                port: 4000,
+                env: 'test'
+            });
+            const routeFiles = [
+                'missing-params.js'
+            ];
+            Api.loadRoutes(routeFiles).catch((error) => {
+                assert.contains(error.message, 'Missing required input');
+            });
+        });
+
+        it('should return an error if the input is marked as optional in the path but not the inputs', () => {
+            const Api = new Server({
+                name: 'test-Server',
+                routeDir: __dirname.concat('/routes'),
+                port: 4000,
+                env: 'test'
+            });
+            const routeFiles = [
+                'optional-param-mismatch.js'
+            ];
+            Api.loadRoutes(routeFiles).catch((error) => {
+                assert.contains(error.message, 'Missing required input');
+            });
+        });
         // it('should return an error if the route does not have a method', () => {
         //     const Api = new Server({
         //         name: 'test-Server',

@@ -412,11 +412,23 @@ class Server {
                             if (piece.indexOf(':') === 0) {
                                 if (!route.inputs) {
                                     error = new Error(`Missing required inputs for [${route.name}]`);
-                                    return;
+                                    break;
                                 }
-                                if (!route.inputs[piece.split(':')[1]]) {
-                                    error = new Error(`Missing required input [${piece}] in route [${route.name}]`)
-                                    return;
+
+                                let inputName = piece.split(':')[1];
+                                const isRequired = inputName[inputName.length - 1] !== '?';
+                                if (!isRequired) {
+                                    inputName = inputName.substr(0, inputName.length - 1);
+                                }
+
+                                if (!route.inputs[inputName]) {
+                                    error = new Error(`Missing required input [${inputName}] in route [${route.name}]`)
+                                    break;
+                                }
+
+                                if (route.inputs[inputName].required !== isRequired) {
+                                    error = new Error(`Input [${inputName}] is marked as ${route.inputs[inputName].required ? '' : 'not '}required in the inputs and ${isRequired ? '' : 'not '}required in the path in route [${route.name}]`);
+                                    break;
                                 }
                             }
                         }
