@@ -452,9 +452,9 @@ class Server {
                         this.http[verb](route.endpoint, this.preprocessor.bind(this, route));
                     }
 
-                    resolve(true);
                 });
             });
+            resolve(true);
         });
     }
 
