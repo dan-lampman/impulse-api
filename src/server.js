@@ -6,6 +6,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const pathRegexp = require('path-to-regexp');
 const fileUpload = require('express-fileupload');
+const xmlparser = require('express-xml-bodyparser');
 
 const Auth = require('./auth');
 const Errors = require('./errors');
@@ -62,8 +63,6 @@ class Server {
     }
 
     start() {
-        let server;
-
         return new Promise((resolve) => {
         // If in test mode, return right away without actually starting HTTP
             if (this.env === 'test') {
@@ -72,7 +71,7 @@ class Server {
             }
 
             // Start the HTTP server
-            server = this.http.listen(this.port, () => {
+            this.http.listen(this.port, () => {
                 console.log('Server initialized:');
                 console.log(`-- name: ${this.name}`);
                 console.log(`-- version: ${this.version}`);
@@ -95,6 +94,7 @@ class Server {
         this.http.use(bodyparser.json({
             extended: true,
         }));
+        this.http.use(xmlparser())
         this.http.use(fileUpload({
             preserveExtension: 10
         }));
