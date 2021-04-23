@@ -292,7 +292,7 @@ class Server {
 
             if (inputs[name].required) {
                 if (params[name] === undefined) {
-                    throw Errors.Missing(`Missing parameter [${name}] in request`);
+                    throw Errors.BadRequest(`Missing parameter [${name}] in request`);
                 }
             }
 
@@ -300,7 +300,7 @@ class Server {
                 const formattedParam = formatter(params[name]);
 
                 if (!validator(formattedParam)) {
-                    throw Errors.Missing(`Invalid parameter format [${name}]`);
+                    throw Errors.BadRequest(`Invalid parameter format [${name}]`);
                 }
 
                 if (formattedParam !== undefined) {
