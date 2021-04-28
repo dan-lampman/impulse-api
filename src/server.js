@@ -1,6 +1,5 @@
 const fs = require('fs');
 const express = require('express');
-const bodyparser = require('body-parser');
 const multer = require('multer');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -88,10 +87,10 @@ class Server {
         this.http.set('x-powered-by', false);
         this.http.use(cors());
         this.http.options('*', cors());
-        this.http.use(bodyparser.urlencoded({
+        this.http.use(express.urlencoded({
             extended: true,
         }));
-        this.http.use(bodyparser.json({
+        this.http.use(express.json({
             extended: true,
         }));
         this.http.use(xmlparser())
@@ -236,9 +235,11 @@ class Server {
             }
         }
 
-        if (route.json) {
+        if (route.requestBodyOverride === true) {
             data = req.body;
-        } else if (route.inputs) {
+        }
+
+        if (route.inputs) {
             try {
                 data = this.buildParameters(
                     Object.assign(req.query || {}, req.body || {}, req.params || {}, req.files || {}),
@@ -526,12 +527,12 @@ function extractBearerToken(options) {
                 success: false,
                 message: 'Invalid request: multiple tokens provided.'
             });
-        } else {
-            req.params[reqKey] = req.params[reqKey] || token;
-            req.body[reqKey] = req.body[reqKey] || token;
-            req.query[reqKey] = req.query[reqKey] || token;
-            next();
         }
+
+        req.params[reqKey] = req.params[reqKey] || token;
+        req.body[reqKey] = req.body[reqKey] || token;
+        req.query[reqKey] = req.query[reqKey] || token;
+        next();
     };
 }
 

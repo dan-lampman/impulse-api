@@ -1,12 +1,10 @@
-exports.xmlData = {
-    name: 'xmlData',
-    description: 'this route parses xml data',
+exports.test = {
+    name: 'test',
+    description: 'this route can do it all',
     method: 'post',
-    endpoint: '/xml',
+    endpoint: '/test',
     version: 'v1',
-    inputs: {
-        films: {}
-    },
+    requestBodyOverride: true,
     run: (services, inputs, next) => {
         next(inputs);
     }
