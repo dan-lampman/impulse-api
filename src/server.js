@@ -36,6 +36,7 @@ class Server {
         this.heartbeat = config.heartbeat || null;
         this.container = new Container(config.services);
         this.secretKey = config.secretKey;
+        this.errors = config.errors || Errors;
         process.env.NODE_ENV = this.env || 'dev';
         this.configureHttpServer();
     }
@@ -203,9 +204,12 @@ class Server {
                 (req.headers['x-access-token'])
 
             if (!token) {
-                res.status(403).send({
+                const msg = `Route ${route.name} requires token auth but token was not provided. Please reference RFC6750.`
+                const err = this.errors.UnauthorizedUser(msg);
+
+                res.status(err.statusCode).send({
                     success: false,
-                    error: `Route ${route.name} requires token auth but token was not provided. Please reference RFC6750.`
+                    error: err
                 });
                 return;
             }
@@ -216,7 +220,8 @@ class Server {
                     username = decoded.username;
                 }
             } catch (error) {
-                res.status(403).send({
+                const err = this.errors.UnauthorizedUser();
+                res.status(err.statusCode).send({
                     success: false,
                     error
                 });
@@ -230,7 +235,7 @@ class Server {
 
         if (route.applicationAuth) {
             if (!key || key !== this.appKey) {
-                sendResponse(Errors.UnauthorizedUser());
+                sendResponse(this.errors.UnauthorizedUser());
                 return;
             }
         }
@@ -293,7 +298,7 @@ class Server {
 
             if (inputs[name].required) {
                 if (params[name] === undefined) {
-                    throw Errors.BadRequest(`Missing parameter [${name}] in request`);
+                    throw this.errors.BadRequest(`Missing parameter [${name}] in request`);
                 }
             }
 
@@ -301,7 +306,7 @@ class Server {
                 const formattedParam = formatter(params[name]);
 
                 if (!validator(formattedParam)) {
-                    throw Errors.BadRequest(`Invalid parameter format [${name}]`);
+                    throw this.errors.BadRequest(`Invalid parameter format [${name}]`);
                 }
 
                 if (formattedParam !== undefined) {
