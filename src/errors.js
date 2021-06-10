@@ -4,6 +4,14 @@ exports.BadRequest = (msg) => {
     return httpErrors(400, msg || 'Bad request');
 };
 
+exports.MissingParameter = (param) => {
+    return httpErrors(400, `Input: ${param} is required`);
+};
+
+exports.InvalidParameter = (param, name) => {
+    return httpErrors(400, `Invalid input value for ${param}: ${name}`);
+};
+
 exports.UnauthorizedUser = (msg) => {
     return httpErrors(401, msg || 'User is not logged in');
 };
