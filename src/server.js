@@ -296,22 +296,22 @@ class Server {
             const formatter = inputs[name].formatter || proxyFormatter;
             const validator = inputs[name].validate || proxyValidator;
 
-            if (inputs[name].required) {
-                if (params[name] === undefined) {
+            if (params[name] === undefined) {
+                if (inputs[name].required) {
                     throw this.errors.MissingParameter(name);
                 }
+
+                params[name] = "";
             }
 
-            if (params[name] !== undefined) {
-                const formattedParam = formatter(params[name]);
+            const formattedParam = formatter(params[name]);
 
-                if (!validator(formattedParam)) {
-                    throw this.errors.InvalidParameter(name, params[name]);
-                }
+            if (!validator(formattedParam)) {
+                throw this.errors.InvalidParameter(name, params[name]);
+            }
 
-                if (formattedParam !== undefined) {
-                    data[name] = formattedParam;
-                }
+            if (formattedParam !== undefined) {
+                data[name] = formattedParam;
             }
         });
 
