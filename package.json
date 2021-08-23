@@ -13,7 +13,7 @@
     "test": "nyc --reporter=lcov --reporter=text-summary mocha",
     "integration-server": "node ./test/integration/test-server.js"
   },
-  "version": "2.0.0",
+  "version": "2.0.2",
   "dependencies": {
     "async": "1.5.2",
     "aws-sdk": "2.343.0",
