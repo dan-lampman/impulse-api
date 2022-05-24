@@ -116,12 +116,15 @@ describe('server-test', () => {
                 env: 'test',
             });
             try {
-                Api.buildParameters({}, {
-                    'test-param': {
-                        required: true
-                    }
-                });
+                Api.buildParameters({
+                        'test-param': {
+                            required: true
+                        },
+                    },
+                    {}
+                );
             } catch (e) {
+                console.log(e)
                 assert.contains(e.message, 'Missing parameter [test-param]');
             }
         });
@@ -217,52 +220,6 @@ describe('server-test', () => {
                 assert.strictEqual(output.param1, '1');
                 assert.strictEqual(output.param2, '2');
                 assert.strictEqual(output.param3, undefined);
-            } catch (e) {
-                assert.ifError(e);
-            }
-        });
-        it('should not run the formatter if the param is not required and not provided', () => {
-            const Api = new Server({
-                name: 'test-Server',
-                routeDir: './test-routes',
-                port: 4000,
-                env: 'test',
-            });
-            try {
-                Api.buildParameters({
-                    param1: undefined
-                }, {
-                    param1: {
-                        required: false,
-                        formatter: () => {
-                            // The formatter should not run, so this error should not be thrown.
-                            throw new Error('param was formatted');
-                        }
-                    }
-                });
-            } catch (e) {
-                assert.ifError(e);
-            }
-        });
-        it('should not run the validator if the parameter is not required and not provided', () => {
-            const Api = new Server({
-                name: 'test-Server',
-                routeDir: './test-routes',
-                port: 4000,
-                env: 'test',
-            });
-            try {
-                Api.buildParameters({
-                    param1: undefined
-                }, {
-                    param1: {
-                        required: false,
-                        validate: () => {
-                            // The validator should not run, so this error should not be thrown.
-                            throw new Error('param was validated');
-                        }
-                    }
-                });
             } catch (e) {
                 assert.ifError(e);
             }
