@@ -3,13 +3,13 @@ const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
 const morgan = require('morgan');
-const pathRegexp = require('path-to-regexp');
+const pathToRegexp = require('path-to-regexp');
 const fileUpload = require('express-fileupload');
-const xmlparser = require('express-xml-bodyparser');
 
 const Auth = require('./auth');
 const Errors = require('./errors');
 const Container = require('./container');
+
 
 class Server {
     constructor(config) {
@@ -94,7 +94,6 @@ class Server {
         this.http.use(express.json({
             extended: true,
         }));
-        this.http.use(xmlparser())
         this.http.use(fileUpload({
             preserveExtension: 10
         }));
@@ -358,13 +357,15 @@ class Server {
 
     checkConflictingRoutes(routes, callback) {
         routes.forEach((route1) => {
-            const route1Regexp = pathRegexp(route1.endpoint);
+            const route1Regexp = pathToRegexp(route1.endpoint);
 
             routes.forEach((route2) => {
-                if (route1.method === route2.method
-                    && route1.endpoint !== route2.endpoint
-                    && RegExp(route1Regexp).test(route2.endpoint)) {
-                        callback(route1, route2);
+                if (
+                    route1.method === route2.method &&
+                    route1.endpoint !== route2.endpoint &&
+                    route1Regexp.test(route2.endpoint)
+                ) {
+                    callback(route1, route2);
                 }
             });
         });
