@@ -37,7 +37,7 @@
   },
   "keywords": [
     "http",
-    "web-server"
+    "web-server",
   ],
   "repository": {
     "type": "git",
