@@ -9,7 +9,7 @@
     "test": "nyc --reporter=lcov --reporter=text-summary mocha",
     "test-server": "node ./test/integration/test-server.js"
   },
-  "version": "3.0.0",
+  "version": "3.0.1",
   "engines": {
     "node": ">=22"
   },
