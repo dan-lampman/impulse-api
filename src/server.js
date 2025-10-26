@@ -36,6 +36,7 @@ class Server {
         this.heartbeat = config.heartbeat || null;
         this.container = new Container(config.services);
         this.secretKey = config.secretKey;
+        this.tokenValidator = config.tokenValidator || null;
         this.errors = config.errors || Errors;
         process.env.NODE_ENV = this.env || 'dev';
         this.configureHttpServer();
@@ -214,7 +215,19 @@ class Server {
             }
 
             try {
-                decoded = await Auth.verifyToken(token, this.secretKey);
+                // Use global token validator if provided, otherwise fall back to default JWT validation
+                if (this.tokenValidator && typeof this.tokenValidator === 'function') {
+                    decoded = await this.tokenValidator(token, this.container);
+                } else {
+                    // Default JWT validation
+                    decoded = await Auth.verifyToken(token, this.secretKey);
+                }
+                
+                // Allow route-specific validation to override the global validator
+                if (route.validateToken && typeof route.validateToken === 'function') {
+                    decoded = await route.validateToken(token, this.container);
+                }
+                
                 if (decoded.username) {
                     username = decoded.username;
                 }
