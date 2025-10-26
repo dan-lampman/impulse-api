@@ -107,6 +107,94 @@ const { Auth } = require('impulse-api');
   TokenExpiredError: [Function: TokenExpiredError] }
 ```
 
+#### Custom JWT Validation
+
+You can override JWT validation to use custom authentication providers (like Google OAuth, Auth0, etc.) instead of the default JWT validation. This is typically configured once at the server level.
+
+##### Server-Level Custom Validation (Recommended)
+```javascript
+const config = {
+    name: 'my-api',
+    port: 3000,
+    secretKey: 'fallback-secret',
+    routeDir: './routes',
+    tokenValidator: async (token, services) => {
+        // Global token validation for all routes with tokenAuth: true
+        const userInfo = await services.googleOAuth.verifyToken(token);
+        return {
+            userId: userInfo.googleId,
+            email: userInfo.email,
+            name: userInfo.name,
+            picture: userInfo.picture
+        };
+    },
+    services: {
+        googleOAuth: {
+            verifyToken: async (token) => {
+                // Your Google OAuth validation logic
+                // This would typically make an API call to Google
+                return { 
+                    googleId: 'google-123', 
+                    email: 'user@example.com',
+                    name: 'John Doe',
+                    picture: 'https://example.com/photo.jpg'
+                };
+            }
+        }
+    }
+};
+
+const api = new Impulse(config);
+```
+
+##### Per-Route Override (Optional)
+If you need different validation for specific routes, you can override the global validator:
+
+```javascript
+exports.specialRoute = {
+    name: 'specialRoute',
+    method: 'post',
+    endpoint: '/api/special',
+    version: 'v1',
+    tokenAuth: true,
+    validateToken: async (token, services) => {
+        // Override global validation for this specific route
+        const userInfo = await services.specialAuth.verifyToken(token);
+        return {
+            userId: userInfo.specialId,
+            role: userInfo.role,
+            permissions: userInfo.permissions
+        };
+    },
+    run: (services, inputs, next) => {
+        const user = inputs.decoded; // From route-specific validation
+        next(200, { message: 'Success', user });
+    }
+};
+```
+
+##### Validation Flow
+1. **Global token validator** (`config.tokenValidator`) - primary validation
+2. **Route-specific validator** (`route.validateToken`) - optional override
+3. **Default JWT validation** - fallback when no token validator is provided
+
+##### Backward Compatibility
+Existing routes without custom validators continue to work with default JWT validation. No breaking changes to the existing API.
+
+##### Error Handling
+Custom validators should throw errors for invalid tokens. The framework will catch these and return appropriate HTTP 401 responses.
+
+```javascript
+validateToken: async (token, services) => {
+    try {
+        const userInfo = await services.oauth.verifyToken(token);
+        return userInfo;
+    } catch (error) {
+        throw new Error('Invalid authentication token');
+    }
+}
+```
+
 #### Application Auth
 For `admin` type routes, Impulse-Api also provides `applicationAuth` which secures any routes behind basic key authorization provided by `appKey` in the server configuration. The `applicationAuth` can be verified and passed in the header, parameters, query, or body as `key`.
 
