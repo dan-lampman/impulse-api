@@ -189,7 +189,12 @@ class Server {
             } else if (response && !error) {
                 res.status(200).send(response);
             } else {
-                res.status(error).send(response);
+                // Handle redirects (302, 301, 307, 308) with Location header
+                if ((error === 302 || error === 301 || error === 307 || error === 308) && response && response.Location) {
+                    res.status(error).header('Location', response.Location).send();
+                } else {
+                    res.status(error).send(response);
+                }
             }
             return;
         }
