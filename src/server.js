@@ -1,6 +1,5 @@
 const fs = require('fs');
 const express = require('express');
-const multer = require('multer');
 const cors = require('cors');
 const morgan = require('morgan');
 const pathToRegexp = require('path-to-regexp');
@@ -475,11 +474,10 @@ class Server {
                     method = route.method.toLowerCase();
                     verb = (verbMap[method]) ? verbMap[method] : method;
 
-                    if (verb === 'post' || verb === 'patch' || verb === 'put') {
-                        this.http[verb](route.endpoint, multer().none(), this.preprocessor.bind(this, route));
-                    } else {
-                        this.http[verb](route.endpoint, this.preprocessor.bind(this, route));
-                    }
+                    // express-fileupload handles multipart/form-data (including files)
+                    // express.json() handles JSON bodies
+                    // multer().none() is not needed and conflicts with file uploads
+                    this.http[verb](route.endpoint, this.preprocessor.bind(this, route));
 
                 });
             });
