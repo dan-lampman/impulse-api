@@ -36,6 +36,7 @@ class Server {
         this.heartbeat = config.heartbeat || null;
         this.container = new Container(config.services);
         this.secretKey = config.secretKey;
+        this.auth = config.secretKey ? new Auth(config.secretKey) : null;
         this.tokenValidator = config.tokenValidator || null;
         this.errors = config.errors || Errors;
         process.env.NODE_ENV = this.env || 'dev';
@@ -225,7 +226,10 @@ class Server {
                     decoded = await this.tokenValidator(token, this.container);
                 } else {
                     // Default JWT validation
-                    decoded = await Auth.verifyToken(token, this.secretKey);
+                    if (!this.auth) {
+                        throw new Error(`Route ${route.name} requires token auth but server was not initialized with secretKey`);
+                    }
+                    decoded = this.auth.verifyToken(token);
                 }
                 
                 // Allow route-specific validation to override the global validator

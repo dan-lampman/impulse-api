@@ -1,4 +1,5 @@
 const Server = require('../src/server');
+const Auth = require('../src/auth');
 const assert = require('assert');
 const sinon = require('sinon');
 
@@ -353,6 +354,149 @@ describe('server-test', () => {
             ];
             testApi.checkConflictingRoutes(routes, spy);
             sinon.assert.notCalled(spy);
+        });
+    });
+
+    describe('Auth module', () => {
+        describe('instantiation', () => {
+            it('should throw an error if secretKey is not provided', () => {
+                try {
+                    new Auth();
+                    assert.fail('Should have thrown an error');
+                } catch (e) {
+                    assert.contains(e.message, 'must be initialized with secretKey');
+                }
+            });
+
+            it('should throw an error if secretKey is null', () => {
+                try {
+                    new Auth(null);
+                    assert.fail('Should have thrown an error');
+                } catch (e) {
+                    assert.contains(e.message, 'must be initialized with secretKey');
+                }
+            });
+
+            it('should throw an error if secretKey is undefined', () => {
+                try {
+                    new Auth(undefined);
+                    assert.fail('Should have thrown an error');
+                } catch (e) {
+                    assert.contains(e.message, 'must be initialized with secretKey');
+                }
+            });
+
+            it('should create an instance when secretKey is provided', () => {
+                const auth = new Auth('test-secret-key');
+                assert.strictEqual(auth.secretKey, 'test-secret-key');
+            });
+        });
+
+        describe('generateToken', () => {
+            it('should generate a token without requiring secretKey parameter', () => {
+                const auth = new Auth('test-secret-key');
+                const params = { userId: 'test-user', role: 'admin' };
+                const token = auth.generateToken(params);
+                assert.strictEqual(typeof token, 'string');
+                assert.strictEqual(token.length > 0, true);
+            });
+
+            it('should generate different tokens for different params', () => {
+                const auth = new Auth('test-secret-key');
+                const token1 = auth.generateToken({ userId: 'user1' });
+                const token2 = auth.generateToken({ userId: 'user2' });
+                assert.notStrictEqual(token1, token2);
+            });
+        });
+
+        describe('verifyToken', () => {
+            it('should verify a token without requiring secretKey parameter', () => {
+                const auth = new Auth('test-secret-key');
+                const params = { userId: 'test-user', role: 'admin' };
+                const token = auth.generateToken(params);
+                const decoded = auth.verifyToken(token);
+                assert.strictEqual(decoded.userId, 'test-user');
+                assert.strictEqual(decoded.role, 'admin');
+            });
+
+            it('should throw an error when verifying a token with wrong secretKey', () => {
+                const auth1 = new Auth('secret-key-1');
+                const auth2 = new Auth('secret-key-2');
+                const token = auth1.generateToken({ userId: 'test-user' });
+                try {
+                    auth2.verifyToken(token);
+                    assert.fail('Should have thrown an error');
+                } catch (e) {
+                    assert.contains(e.message, 'invalid signature');
+                }
+            });
+
+            it('should throw an error when verifying an invalid token', () => {
+                const auth = new Auth('test-secret-key');
+                try {
+                    auth.verifyToken('invalid-token-string');
+                    assert.fail('Should have thrown an error');
+                } catch (e) {
+                    assert.strictEqual(typeof e.message, 'string');
+                }
+            });
+        });
+
+        describe('createCustomValidator', () => {
+            it('should throw an error if validator is not a function', () => {
+                const auth = new Auth('test-secret-key');
+                try {
+                    auth.createCustomValidator('not-a-function');
+                    assert.fail('Should have thrown an error');
+                } catch (e) {
+                    assert.contains(e.message, 'must be a function');
+                }
+            });
+
+            it('should return the validator function if valid', () => {
+                const auth = new Auth('test-secret-key');
+                const validatorFn = () => true;
+                const result = auth.createCustomValidator(validatorFn);
+                assert.strictEqual(result, validatorFn);
+            });
+        });
+    });
+
+    describe('Server Auth integration', () => {
+        it('should create auth instance when secretKey is provided', () => {
+            const server = new Server({
+                name: 'test-server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                secretKey: 'test-secret-key',
+                services: {}
+            });
+            assert.strictEqual(server.auth !== null, true);
+            assert.strictEqual(server.auth.secretKey, 'test-secret-key');
+        });
+
+        it('should not create auth instance when secretKey is not provided', () => {
+            const server = new Server({
+                name: 'test-server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                services: {}
+            });
+            assert.strictEqual(server.auth, null);
+        });
+
+        it('should not create auth instance when secretKey is null', () => {
+            const server = new Server({
+                name: 'test-server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                secretKey: null,
+                services: {}
+            });
+            assert.strictEqual(server.auth, null);
         });
     });
 });

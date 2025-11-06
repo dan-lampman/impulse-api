@@ -99,8 +99,9 @@ exports.testRoute = {
             await api.init();
 
             // Test default JWT validation
-            const token = Auth.generateToken({ userId: 'test-user' }, { secretKey: 'test-secret' });
-            const decoded = Auth.verifyToken(token, 'test-secret');
+            const auth = new Auth('test-secret');
+            const token = auth.generateToken({ userId: 'test-user' });
+            const decoded = auth.verifyToken(token);
             assert.strictEqual(decoded.userId, 'test-user');
         });
     });
@@ -290,8 +291,9 @@ exports.testRoute = {
             await api.init();
 
             // Test that default JWT validation still works
-            const token = Auth.generateToken({ userId: 'legacy-user' }, { secretKey: 'test-secret' });
-            const decoded = Auth.verifyToken(token, 'test-secret');
+            const auth = new Auth('test-secret');
+            const token = auth.generateToken({ userId: 'legacy-user' });
+            const decoded = auth.verifyToken(token);
             assert.strictEqual(decoded.userId, 'legacy-user');
         });
     });

@@ -1,11 +1,21 @@
 const jwt = require('jsonwebtoken');
-const auth = {
-    generateToken(params, config) {
-        return(jwt.sign(params, config.secretKey));
-    },
-    verifyToken(token, secretKey) {
-        return jwt.verify(token, secretKey);
-    },
+
+class Auth {
+    constructor(secretKey) {
+        if (!secretKey) {
+            throw new Error('Auth instance must be initialized with secretKey');
+        }
+        this.secretKey = secretKey;
+    }
+
+    generateToken(params) {
+        return jwt.sign(params, this.secretKey);
+    }
+
+    verifyToken(token) {
+        return jwt.verify(token, this.secretKey);
+    }
+
     // Helper function to create custom validators
     createCustomValidator(validatorFn) {
         if (typeof validatorFn !== 'function') {
@@ -13,6 +23,6 @@ const auth = {
         }
         return validatorFn;
     }
-};
+}
 
-module.exports = auth;
+module.exports = Auth;
