@@ -95,16 +95,94 @@ Impulse-Api comes with [JSON web token](https://www.npmjs.com/package/jsonwebtok
 
 Additionally, any variables that are encoded in the token are accessible once the token has been decoded via `inputs.decoded`.
 
-Token generation is handled via `Impulse.Auth` which again utilizes the [JSON web token](https://www.npmjs.com/package/jsonwebtoken) package.
+#### Token Generation
+
+Token generation is handled via the `Auth` class. You must create an `Auth` instance with your `secretKey`, then you can generate and verify tokens without passing the secret key on every call.
 
 ```js
-const { Auth } = require('impulse-api');
-{ decode: [Function],
-  verify: [Function],
-  sign: [Function],
-  JsonWebTokenError: [Function: JsonWebTokenError],
-  NotBeforeError: [Function: NotBeforeError],
-  TokenExpiredError: [Function: TokenExpiredError] }
+const Impulse = require('impulse-api');
+const Auth = Impulse.Auth;
+
+// Create an Auth instance with your secret key
+const auth = new Auth('your-secret-key');
+
+// Generate a token (no need to pass secretKey again)
+const token = auth.generateToken({ 
+    userId: '123', 
+    username: 'john.doe',
+    role: 'admin' 
+});
+
+// Verify a token (no need to pass secretKey again)
+const decoded = auth.verifyToken(token);
+console.log(decoded.userId); // '123'
+console.log(decoded.username); // 'john.doe'
+```
+
+**Important:** The `Auth` class requires a `secretKey` in the constructor. If you don't provide one, it will throw an error.
+
+```js
+// This will throw an error
+const auth = new Auth(); // Error: Auth instance must be initialized with secretKey
+
+// This is correct
+const auth = new Auth('your-secret-key');
+```
+
+When using the server with `secretKey` in the config, the server automatically creates an `Auth` instance internally. You can also create your own `Auth` instances for token generation in your application code (e.g., in login routes).
+
+**Example: Login Route**
+
+Here's a complete example of a login route that generates tokens:
+
+```js
+// routes/auth.js
+const Impulse = require('impulse-api');
+const Auth = Impulse.Auth;
+
+// Create Auth instance with your secret key (same as server config)
+const auth = new Auth(process.env.SECRET_KEY || 'your-secret-key');
+
+exports.login = {
+    name: 'login',
+    description: 'User login endpoint',
+    method: 'post',
+    endpoint: '/api/login',
+    version: 'v1',
+    inputs: {
+        email: {
+            required: true,
+            validate: (val) => typeof val === 'string' && val.includes('@')
+        },
+        password: {
+            required: true
+        }
+    },
+    run: (services, inputs, next) => {
+        // Authenticate user (check database, etc.)
+        const user = services.userService.authenticate(inputs.email, inputs.password);
+        
+        if (!user) {
+            return next(401, { error: 'Invalid credentials' });
+        }
+        
+        // Generate token with user data
+        const token = auth.generateToken({
+            userId: user.id,
+            email: user.email,
+            role: user.role
+        });
+        
+        next(200, {
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role
+            }
+        });
+    }
+};
 ```
 
 #### Custom JWT Validation

@@ -1,6 +1,6 @@
 const Server = require('./server');
 const Errors = require('./errors');
-const JSONWebToken = require('jsonwebtoken');
+const Auth = require('./auth');
 
 class Api {
     constructor(config) {
@@ -10,6 +10,6 @@ class Api {
 }
 
 Api.Errors = Errors;
-Api.Auth = JSONWebToken;
+Api.Auth = Auth;
 
 module.exports = Api;
