@@ -276,6 +276,11 @@ class Server {
             }
         }
 
+        // Handle rawBody - append the raw Buffer if rawBody flag is set
+        if (route.rawBody === true) {
+            data.rawBody = req.body; // This will be a Buffer, not a parsed object
+        }
+
         if (route.headers) {
             try {
                 data.headers = this.buildParameters(req.headers, route.headers);
@@ -474,10 +479,15 @@ class Server {
                     method = route.method.toLowerCase();
                     verb = (verbMap[method]) ? verbMap[method] : method;
 
-                    // express-fileupload handles multipart/form-data (including files)
-                    // express.json() handles JSON bodies
-                    // multer().none() is not needed and conflicts with file uploads
-                    this.http[verb](route.endpoint, this.preprocessor.bind(this, route));
+                    // For routes that need raw body (e.g., webhooks), use express.raw() instead of JSON
+                    if (route.rawBody === true) {
+                        this.http[verb](route.endpoint, express.raw({ type: 'application/json' }), this.preprocessor.bind(this, route));
+                    } else {
+                        // express-fileupload handles multipart/form-data (including files)
+                        // express.json() handles JSON bodies
+                        // multer().none() is not needed and conflicts with file uploads
+                        this.http[verb](route.endpoint, this.preprocessor.bind(this, route));
+                    }
 
                 });
             });

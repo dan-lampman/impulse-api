@@ -449,7 +449,7 @@ describe('server-test', () => {
                     auth.createCustomValidator('not-a-function');
                     assert.fail('Should have thrown an error');
                 } catch (e) {
-                    assert.contains(e.message, 'must be a function');
+                    assert.contains(e.message, 'Custom validator must be a function');
                 }
             });
 
@@ -497,6 +497,209 @@ describe('server-test', () => {
                 services: {}
             });
             assert.strictEqual(server.auth, null);
+        });
+    });
+
+    describe('rawBody functionality', () => {
+        it('should set rawBody as Buffer when route.rawBody is true', async () => {
+            const Api = new Server({
+                name: 'test-Server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                services: {}
+            });
+
+            const testBody = Buffer.from(JSON.stringify({ test: 'data' }));
+            const req = {
+                body: testBody,
+                query: {},
+                params: {},
+                files: {},
+                headers: {},
+                get: (header) => {
+                    if (header === 'origin') return 'http://localhost:4000';
+                    if (header === 'host') return 'localhost:4000';
+                    return null;
+                }
+            };
+            const res = {
+                status: (code) => {
+                    res.statusCode = code;
+                    return res;
+                },
+                send: (data) => {
+                    res.sentData = data;
+                }
+            };
+
+            const route = {
+                name: 'test-raw-body',
+                method: 'post',
+                endpoint: '/test',
+                rawBody: true,
+                run: (services, inputs, next) => {
+                    assert.strictEqual(Buffer.isBuffer(inputs.rawBody), true);
+                    assert.deepStrictEqual(inputs.rawBody, testBody);
+                    next(200, { success: true });
+                }
+            };
+
+            await Api.preprocessor(route, req, res);
+            assert.strictEqual(res.statusCode, 200);
+        });
+
+        it('should not set rawBody when route.rawBody is false', async () => {
+            const Api = new Server({
+                name: 'test-Server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                services: {}
+            });
+
+            const testBody = { test: 'data' };
+            const req = {
+                body: testBody,
+                query: {},
+                params: {},
+                files: {},
+                headers: {},
+                get: (header) => {
+                    if (header === 'origin') return 'http://localhost:4000';
+                    if (header === 'host') return 'localhost:4000';
+                    return null;
+                }
+            };
+            const res = {
+                status: (code) => {
+                    res.statusCode = code;
+                    return res;
+                },
+                send: (data) => {
+                    res.sentData = data;
+                }
+            };
+
+            const route = {
+                name: 'test-no-raw-body',
+                method: 'post',
+                endpoint: '/test',
+                rawBody: false,
+                run: (services, inputs, next) => {
+                    assert.strictEqual(inputs.rawBody, undefined);
+                    next(200, { success: true });
+                }
+            };
+
+            await Api.preprocessor(route, req, res);
+            assert.strictEqual(res.statusCode, 200);
+        });
+
+        it('should process inputs alongside rawBody when both are present', async () => {
+            const Api = new Server({
+                name: 'test-Server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                services: {}
+            });
+
+            const testBody = Buffer.from(JSON.stringify({ test: 'data' }));
+            const req = {
+                body: testBody,
+                query: { param1: 'value1' },
+                params: { id: '123' },
+                files: {},
+                headers: {},
+                get: (header) => {
+                    if (header === 'origin') return 'http://localhost:4000';
+                    if (header === 'host') return 'localhost:4000';
+                    return null;
+                }
+            };
+            const res = {
+                status: (code) => {
+                    res.statusCode = code;
+                    return res;
+                },
+                send: (data) => {
+                    res.sentData = data;
+                }
+            };
+
+            const route = {
+                name: 'test-raw-body-with-inputs',
+                method: 'post',
+                endpoint: '/test/:id',
+                rawBody: true,
+                inputs: {
+                    param1: {
+                        required: true
+                    },
+                    id: {
+                        required: true
+                    }
+                },
+                run: (services, inputs, next) => {
+                    assert.strictEqual(Buffer.isBuffer(inputs.rawBody), true);
+                    assert.deepStrictEqual(inputs.rawBody, testBody);
+                    assert.strictEqual(inputs.param1, 'value1');
+                    assert.strictEqual(inputs.id, '123');
+                    next(200, { success: true });
+                }
+            };
+
+            await Api.preprocessor(route, req, res);
+            assert.strictEqual(res.statusCode, 200);
+        });
+
+        it('should handle rawBody without inputs', async () => {
+            const Api = new Server({
+                name: 'test-Server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                services: {}
+            });
+
+            const testBody = Buffer.from('raw string data');
+            const req = {
+                body: testBody,
+                query: {},
+                params: {},
+                files: {},
+                headers: {},
+                get: (header) => {
+                    if (header === 'origin') return 'http://localhost:4000';
+                    if (header === 'host') return 'localhost:4000';
+                    return null;
+                }
+            };
+            const res = {
+                status: (code) => {
+                    res.statusCode = code;
+                    return res;
+                },
+                send: (data) => {
+                    res.sentData = data;
+                }
+            };
+
+            const route = {
+                name: 'test-raw-body-only',
+                method: 'post',
+                endpoint: '/test',
+                rawBody: true,
+                run: (services, inputs, next) => {
+                    assert.strictEqual(Buffer.isBuffer(inputs.rawBody), true);
+                    assert.deepStrictEqual(inputs.rawBody, testBody);
+                    next(200, { success: true });
+                }
+            };
+
+            await Api.preprocessor(route, req, res);
+            assert.strictEqual(res.statusCode, 200);
         });
     });
 });

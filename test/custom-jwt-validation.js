@@ -253,12 +253,13 @@ exports.testRoute = {
         });
 
         it('should validate custom validator function type', () => {
+            const auth = new Auth('test-secret');
             assert.throws(() => {
-                Auth.createCustomValidator('not-a-function');
+                auth.createCustomValidator('not-a-function');
             }, /Custom validator must be a function/);
 
             assert.doesNotThrow(() => {
-                Auth.createCustomValidator(() => {});
+                auth.createCustomValidator(() => {});
             });
         });
     });
