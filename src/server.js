@@ -266,10 +266,12 @@ class Server {
 
         if (route.inputs) {
             try {
-                data = this.buildParameters(
-                    Object.assign(req.query || {}, req.body || {}, req.params || {}, req.files || {}),
-                    route.inputs
-                );
+                // When rawBody is true, exclude req.body from inputs processing since it's a Buffer
+                const paramsForInputs = route.rawBody === true
+                    ? Object.assign(req.query || {}, req.params || {}, req.files || {})
+                    : Object.assign(req.query || {}, req.body || {}, req.params || {}, req.files || {});
+                
+                data = this.buildParameters(paramsForInputs, route.inputs);
             } catch (error) {
                 sendResponse(error);
                 return;

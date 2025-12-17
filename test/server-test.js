@@ -701,5 +701,79 @@ describe('server-test', () => {
             await Api.preprocessor(route, req, res);
             assert.strictEqual(res.statusCode, 200);
         });
+
+        it('should not include Buffer body in inputs processing when rawBody is true', async () => {
+            const Api = new Server({
+                name: 'test-Server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                services: {}
+            });
+
+            const testBody = Buffer.from(JSON.stringify({ test: 'data', shouldNotBeParsed: true }));
+            const req = {
+                body: testBody,
+                query: { param1: 'value1' },
+                params: { id: '123' },
+                files: {},
+                headers: {},
+                get: (header) => {
+                    if (header === 'origin') return 'http://localhost:4000';
+                    if (header === 'host') return 'localhost:4000';
+                    return null;
+                }
+            };
+            const res = {
+                status: (code) => {
+                    res.statusCode = code;
+                    return res;
+                },
+                send: (data) => {
+                    res.sentData = data;
+                }
+            };
+
+            const route = {
+                name: 'test-raw-body-excluded-from-inputs',
+                method: 'post',
+                endpoint: '/test/:id',
+                rawBody: true,
+                inputs: {
+                    param1: {
+                        required: true
+                    },
+                    id: {
+                        required: true
+                    },
+                    // This should NOT be found in inputs even though it's in the Buffer body
+                    test: {
+                        required: false
+                    },
+                    shouldNotBeParsed: {
+                        required: false
+                    }
+                },
+                run: (services, inputs, next) => {
+                    // Verify rawBody is still a Buffer
+                    assert.strictEqual(Buffer.isBuffer(inputs.rawBody), true);
+                    assert.deepStrictEqual(inputs.rawBody, testBody);
+                    
+                    // Verify inputs from query/params work
+                    assert.strictEqual(inputs.param1, 'value1');
+                    assert.strictEqual(inputs.id, '123');
+                    
+                    // Verify that parsed body fields are NOT in inputs (because Buffer was excluded)
+                    // buildParameters sets missing optional params to empty string, not undefined
+                    assert.strictEqual(inputs.test, "");
+                    assert.strictEqual(inputs.shouldNotBeParsed, "");
+                    
+                    next(200, { success: true });
+                }
+            };
+
+            await Api.preprocessor(route, req, res);
+            assert.strictEqual(res.statusCode, 200);
+        });
     });
 });
