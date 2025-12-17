@@ -92,9 +92,8 @@ class Server {
         this.http.use(express.urlencoded({
             extended: true,
         }));
-        this.http.use(express.json({
-            extended: true,
-        }));
+        // Don't use global express.json() - apply it per-route to avoid conflicts with rawBody routes
+        // express.urlencoded() is safe to keep global as it only parses application/x-www-form-urlencoded
         this.http.use(fileUpload({
             preserveExtension: 10
         }));
@@ -485,10 +484,10 @@ class Server {
                     if (route.rawBody === true) {
                         this.http[verb](route.endpoint, express.raw({ type: 'application/json' }), this.preprocessor.bind(this, route));
                     } else {
+                        // Apply express.json() per-route for routes that need JSON parsing
                         // express-fileupload handles multipart/form-data (including files)
-                        // express.json() handles JSON bodies
-                        // multer().none() is not needed and conflicts with file uploads
-                        this.http[verb](route.endpoint, this.preprocessor.bind(this, route));
+                        // express.urlencoded() is already global and only parses form-encoded data
+                        this.http[verb](route.endpoint, express.json({ extended: true }), this.preprocessor.bind(this, route));
                     }
 
                 });

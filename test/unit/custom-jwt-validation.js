@@ -1,6 +1,6 @@
 const assert = require('assert');
-const Api = require('../src/api');
-const Auth = require('../src/auth');
+const Api = require('../../src/api');
+const Auth = require('../../src/auth');
 
 describe('Custom JWT Validation', () => {
     let testServer;

@@ -1,4 +1,4 @@
-const Api = require('../src/api');
+const Api = require('../../src/api');
 const assert = require('assert');
 
 describe('server-test', () => {
