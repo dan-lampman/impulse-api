@@ -177,6 +177,40 @@ class Server {
         };
 
         function sendResponse(error, response) {
+            // Handle raw responses - send Buffer/string as-is without JSON serialization
+            // When rawResponse is true, only Buffer and string are sent raw via res.end().
+            // All other types fall through to default JSON serialization below.
+            if (route.rawResponse === true) {
+                if (response && !error) {
+                    // Successful response - send raw if Buffer or string
+                    if (Buffer.isBuffer(response) || typeof response === 'string') {
+                        res.status(200).end(response);
+                        return;
+                    }
+                    // Not raw-compatible, fall through to default JSON serialization
+                } else if (error && !response) {
+                    // Error response - send raw if Buffer or string
+                    if (Buffer.isBuffer(error) || typeof error === 'string') {
+                        const statusCode = (typeof error === 'number' && !isNaN(error)) ? error : 400;
+                        res.status(statusCode).end(error);
+                        return;
+                    }
+                    // Not raw-compatible, fall through to default JSON serialization
+                } else if (error && response) {
+                    // Status code with response (redirects, etc.)
+                    if ((error === 302 || error === 301 || error === 307 || error === 308) && response.Location) {
+                        res.status(error).header('Location', response.Location).end();
+                        return;
+                    } else if (Buffer.isBuffer(response) || typeof response === 'string') {
+                        res.status(error).end(response);
+                        return;
+                    }
+                    // Not raw-compatible, fall through to default JSON serialization
+                }
+                // If rawResponse is true but response is not Buffer/string, fall through to default
+            }
+
+            // Default JSON serialization behavior
             if (error instanceof Error) {
                 res.status(error.statusCode ? error.statusCode : 400).send(error);
             } else if (error && !response) {

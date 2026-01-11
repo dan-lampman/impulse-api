@@ -596,7 +596,166 @@ describe('server-test', () => {
             assert.strictEqual(res.statusCode, 200);
         });
 
-        it('should process inputs alongside rawBody when both are present', async () => {
+        it('should send raw response as Buffer when route.rawResponse is true', async () => {
+            const Api = new Server({
+                name: 'test-Server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                services: {}
+            });
+
+            const testBody = { test: 'data' };
+            const testResponse = Buffer.from('raw response data');
+            const req = {
+                body: testBody,
+                query: {},
+                params: {},
+                files: {},
+                headers: {},
+                get: (header) => {
+                    if (header === 'origin') return 'http://localhost:4000';
+                    if (header === 'host') return 'localhost:4000';
+                    return null;
+                }
+            };
+            const res = {
+                statusCode: 200,
+                status: (code) => {
+                    res.statusCode = code;
+                    return res;
+                },
+                send: (data) => {
+                    res.sentData = data;
+                },
+                end: (data) => {
+                    res.sentData = data;
+                }
+            };
+
+            const route = {
+                name: 'test-raw-response',
+                method: 'post',
+                endpoint: '/test',
+                rawResponse: true,
+                run: (services, inputs, next) => {
+                    next(null, testResponse);
+                }
+            };
+
+            await Api.preprocessor(route, req, res);
+            assert.strictEqual(res.statusCode, 200);
+            assert.strictEqual(Buffer.isBuffer(res.sentData), true);
+            assert.deepStrictEqual(res.sentData, testResponse);
+        });
+
+        it('should send raw response as string when route.rawResponse is true', async () => {
+            const Api = new Server({
+                name: 'test-Server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                services: {}
+            });
+
+            const testBody = { test: 'data' };
+            const testResponse = 'raw string response';
+            const req = {
+                body: testBody,
+                query: {},
+                params: {},
+                files: {},
+                headers: {},
+                get: (header) => {
+                    if (header === 'origin') return 'http://localhost:4000';
+                    if (header === 'host') return 'localhost:4000';
+                    return null;
+                }
+            };
+            const res = {
+                statusCode: 200,
+                status: (code) => {
+                    res.statusCode = code;
+                    return res;
+                },
+                send: (data) => {
+                    res.sentData = data;
+                },
+                end: (data) => {
+                    res.sentData = data;
+                }
+            };
+
+            const route = {
+                name: 'test-raw-response-string',
+                method: 'post',
+                endpoint: '/test',
+                rawResponse: true,
+                run: (services, inputs, next) => {
+                    next(null, testResponse);
+                }
+            };
+
+            await Api.preprocessor(route, req, res);
+            assert.strictEqual(res.statusCode, 200);
+            assert.strictEqual(typeof res.sentData, 'string');
+            assert.strictEqual(res.sentData, testResponse);
+        });
+
+        it('should JSON serialize response when route.rawResponse is false', async () => {
+            const Api = new Server({
+                name: 'test-Server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                services: {}
+            });
+
+            const testBody = { test: 'data' };
+            const testResponse = { success: true, data: 'test' };
+            const req = {
+                body: testBody,
+                query: {},
+                params: {},
+                files: {},
+                headers: {},
+                get: (header) => {
+                    if (header === 'origin') return 'http://localhost:4000';
+                    if (header === 'host') return 'localhost:4000';
+                    return null;
+                }
+            };
+            const res = {
+                statusCode: 200,
+                status: (code) => {
+                    res.statusCode = code;
+                    return res;
+                },
+                send: (data) => {
+                    res.sentData = data;
+                },
+                end: (data) => {
+                    res.sentData = data;
+                }
+            };
+
+            const route = {
+                name: 'test-json-response',
+                method: 'post',
+                endpoint: '/test',
+                rawResponse: false,
+                run: (services, inputs, next) => {
+                    next(null, testResponse);
+                }
+            };
+
+            await Api.preprocessor(route, req, res);
+            assert.strictEqual(res.statusCode, 200);
+            // When rawResponse is false, Express will JSON serialize objects
+            assert.deepStrictEqual(res.sentData, testResponse);
+        });
+
+        it('should process inputs alongside rawResponse when both are present', async () => {
             const Api = new Server({
                 name: 'test-Server',
                 routeDir: './test-routes',
