@@ -71,8 +71,8 @@ class Server {
                 return;
             }
 
-            // Start the HTTP server
-            this.http.listen(this.port, () => {
+            // Start the HTTP server - store the server instance so we can close it later
+            this.server = this.http.listen(this.port, () => {
                 console.log('Server initialized:');
                 console.log(`-- name: ${this.name}`);
                 console.log(`-- version: ${this.version}`);
@@ -176,7 +176,13 @@ class Server {
             }).bind(req)
         };
 
-        function sendResponse(error, response) {
+        function sendResponse(error, response, headers) {
+            // Set headers if provided (for rawResponse mode)
+            if (headers && typeof headers === 'object') {
+                Object.keys(headers).forEach(key => {
+                    res.setHeader(key, headers[key]);
+                });
+            }
             // Handle raw responses - send Buffer/string as-is without JSON serialization
             // When rawResponse is true, only Buffer and string are sent raw via res.end().
             // All other types fall through to default JSON serialization below.
@@ -249,7 +255,7 @@ class Server {
                     success: false,
                     error: err
                 });
-                return;
+                return Promise.resolve();
             }
 
             try {
@@ -278,7 +284,7 @@ class Server {
                     success: false,
                     error
                 });
-                return;
+                return Promise.resolve();
             }
         }
 
@@ -289,7 +295,7 @@ class Server {
         if (route.applicationAuth) {
             if (!key || key !== this.appKey) {
                 sendResponse(this.errors.UnauthorizedUser());
-                return;
+                return Promise.resolve();
             }
         }
 
@@ -307,7 +313,7 @@ class Server {
                 data = this.buildParameters(paramsForInputs, route.inputs);
             } catch (error) {
                 sendResponse(error);
-                return;
+                return Promise.resolve();
             }
         }
 
@@ -321,7 +327,7 @@ class Server {
                 data.headers = this.buildParameters(req.headers, route.headers);
             } catch (error) {
                 sendResponse(error);
-                return;
+                return Promise.resolve();
             }
         }
 
@@ -332,10 +338,19 @@ class Server {
         data.decoded = decoded;
         data._host = req.get('origin') || req.get('host')
 
-        route.run.bind(routeContext)(this.container, data, ((responseError, response) => {
-            sendResponse(responseError, response);
-            return;
-        }).bind(this));
+        return new Promise((resolve) => {
+            try {
+                route.run.bind(routeContext)(this.container, data, ((responseError, response, headers) => {
+                    sendResponse(responseError, response, headers);
+                    resolve();
+                    return;
+                }).bind(this));
+            } catch (error) {
+                // If route.run throws synchronously, handle it
+                sendResponse(error);
+                resolve();
+            }
+        });
     }
 
     buildParameters(params, inputs) {

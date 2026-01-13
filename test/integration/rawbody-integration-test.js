@@ -23,10 +23,13 @@ describe('rawBody HTTP Integration', () => {
 
     after(async () => {
         // Clean up test server
-        if (testServer && testServer.http) {
+        if (testServer && testServer.server) {
             await new Promise((resolve) => {
-                if (testServer.http.listening) {
-                    testServer.http.close(() => resolve());
+                if (testServer.server.listening) {
+                    testServer.server.closeAllConnections();
+                    testServer.server.close(() => {
+                        resolve();
+                    });
                 } else {
                     resolve();
                 }

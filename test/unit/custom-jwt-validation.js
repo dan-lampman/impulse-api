@@ -37,6 +37,7 @@ describe('Custom JWT Validation', () => {
                 routeDir: testRouteDir,
                 secretKey: 'test-secret',
                 tokenValidator: customValidator,
+                env: 'test',
                 services: {
                     testService: { name: 'test' }
                 }
@@ -77,6 +78,7 @@ exports.testRoute = {
                 name: 'test-api',
                 routeDir: testRouteDir,
                 secretKey: 'test-secret',
+                env: 'test',
                 services: {}
             };
 
@@ -128,6 +130,7 @@ exports.testRoute = {
                 routeDir: testRouteDir,
                 secretKey: 'test-secret',
                 tokenValidator: serverValidator,
+                env: 'test',
                 services: {}
             };
 
@@ -181,6 +184,7 @@ exports.testRoute = {
                 routeDir: testRouteDir,
                 secretKey: 'test-secret',
                 tokenValidator: serverValidator,
+                env: 'test',
                 services: {}
             };
 
@@ -222,6 +226,7 @@ exports.testRoute = {
                 routeDir: testRouteDir,
                 secretKey: 'test-secret',
                 tokenValidator: failingValidator,
+                env: 'test',
                 services: {}
             };
 
@@ -270,6 +275,7 @@ exports.testRoute = {
                 name: 'test-api',
                 routeDir: testRouteDir,
                 secretKey: 'test-secret',
+                env: 'test',
                 services: {}
             };
 

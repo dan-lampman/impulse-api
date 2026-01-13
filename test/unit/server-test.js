@@ -935,4 +935,191 @@ describe('server-test', () => {
             assert.strictEqual(res.statusCode, 200);
         });
     });
+
+    describe('response headers functionality', () => {
+        it('should set headers when passed via next() with rawResponse: true', async () => {
+            const Api = new Server({
+                name: 'test-Server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                services: {}
+            });
+
+            const testBody = { test: 'data' };
+            const testResponse = Buffer.from('raw response data');
+            const testHeaders = {
+                'Content-Type': 'application/octet-stream',
+                'X-Custom-Header': 'custom-value',
+                'Cache-Control': 'no-cache'
+            };
+            const req = {
+                body: testBody,
+                query: {},
+                params: {},
+                files: {},
+                headers: {},
+                get: (header) => {
+                    if (header === 'origin') return 'http://localhost:4000';
+                    if (header === 'host') return 'localhost:4000';
+                    return null;
+                }
+            };
+            const res = {
+                statusCode: 200,
+                headers: {},
+                setHeader: (key, value) => {
+                    res.headers[key] = value;
+                },
+                status: (code) => {
+                    res.statusCode = code;
+                    return res;
+                },
+                send: (data) => {
+                    res.sentData = data;
+                },
+                end: (data) => {
+                    res.sentData = data;
+                }
+            };
+
+            const route = {
+                name: 'test-headers-raw-response',
+                method: 'post',
+                endpoint: '/test',
+                rawResponse: true,
+                run: (services, inputs, next) => {
+                    next(null, testResponse, testHeaders);
+                }
+            };
+
+            await Api.preprocessor(route, req, res);
+            assert.strictEqual(res.statusCode, 200);
+            assert.strictEqual(Buffer.isBuffer(res.sentData), true);
+            assert.deepStrictEqual(res.sentData, testResponse);
+            assert.strictEqual(res.headers['Content-Type'], 'application/octet-stream');
+            assert.strictEqual(res.headers['X-Custom-Header'], 'custom-value');
+            assert.strictEqual(res.headers['Cache-Control'], 'no-cache');
+        });
+
+        it('should set headers when passed via next() with regular JSON response', async () => {
+            const Api = new Server({
+                name: 'test-Server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                services: {}
+            });
+
+            const testBody = { test: 'data' };
+            const testResponse = { success: true, message: 'test response' };
+            const testHeaders = {
+                'Content-Type': 'application/json',
+                'X-Request-ID': '12345',
+                'X-Rate-Limit': '100'
+            };
+            const req = {
+                body: testBody,
+                query: {},
+                params: {},
+                files: {},
+                headers: {},
+                get: (header) => {
+                    if (header === 'origin') return 'http://localhost:4000';
+                    if (header === 'host') return 'localhost:4000';
+                    return null;
+                }
+            };
+            const res = {
+                statusCode: 200,
+                headers: {},
+                setHeader: (key, value) => {
+                    res.headers[key] = value;
+                },
+                status: (code) => {
+                    res.statusCode = code;
+                    return res;
+                },
+                send: (data) => {
+                    res.sentData = data;
+                },
+                end: (data) => {
+                    res.sentData = data;
+                }
+            };
+
+            const route = {
+                name: 'test-headers-json-response',
+                method: 'post',
+                endpoint: '/test',
+                rawResponse: false,
+                run: (services, inputs, next) => {
+                    next(null, testResponse, testHeaders);
+                }
+            };
+
+            await Api.preprocessor(route, req, res);
+            assert.strictEqual(res.statusCode, 200);
+            assert.deepStrictEqual(res.sentData, testResponse);
+            assert.strictEqual(res.headers['Content-Type'], 'application/json');
+            assert.strictEqual(res.headers['X-Request-ID'], '12345');
+            assert.strictEqual(res.headers['X-Rate-Limit'], '100');
+        });
+
+        it('should handle routes without headers parameter', async () => {
+            const Api = new Server({
+                name: 'test-Server',
+                routeDir: './test-routes',
+                port: 4000,
+                env: 'test',
+                services: {}
+            });
+
+            const testBody = { test: 'data' };
+            const testResponse = { success: true };
+            const req = {
+                body: testBody,
+                query: {},
+                params: {},
+                files: {},
+                headers: {},
+                get: (header) => {
+                    if (header === 'origin') return 'http://localhost:4000';
+                    if (header === 'host') return 'localhost:4000';
+                    return null;
+                }
+            };
+            const res = {
+                statusCode: 200,
+                headers: {},
+                setHeader: (key, value) => {
+                    res.headers[key] = value;
+                },
+                status: (code) => {
+                    res.statusCode = code;
+                    return res;
+                },
+                send: (data) => {
+                    res.sentData = data;
+                }
+            };
+
+            const route = {
+                name: 'test-no-headers',
+                method: 'post',
+                endpoint: '/test',
+                rawResponse: false,
+                run: (services, inputs, next) => {
+                    // Call next without headers parameter (backward compatibility)
+                    next(null, testResponse);
+                }
+            };
+
+            await Api.preprocessor(route, req, res);
+            assert.strictEqual(res.statusCode, 200);
+            assert.deepStrictEqual(res.sentData, testResponse);
+            // No headers should be set
+            assert.strictEqual(Object.keys(res.headers).length, 0);
+        });
+    });
 });
